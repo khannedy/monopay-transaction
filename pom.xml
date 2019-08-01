@@ -9,14 +9,15 @@
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   <groupId>com.monopay</groupId>
-  <artifactId>monopay-wallet</artifactId>
+  <artifactId>monopay-transaction</artifactId>
   <version>0.0.1-SNAPSHOT</version>
 
-  <name>monopay-wallet</name>
+  <name>monopay-transaction</name>
   <description>Demo project for Monolith Project</description>
 
   <properties>
     <java.version>1.8</java.version>
+    <kafka.version>2.3.0</kafka.version>
   </properties>
 
   <dependencies>
@@ -31,6 +32,15 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka-test</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

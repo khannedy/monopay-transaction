@@ -5,4 +5,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface BalanceRepository extends MongoRepository<Balance, String> {
 
+  Balance findByIdAndMerchantId(String id, String merchantId);
+
 }

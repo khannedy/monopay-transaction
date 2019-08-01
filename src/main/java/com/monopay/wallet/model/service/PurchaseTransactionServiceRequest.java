@@ -2,7 +2,6 @@ package com.monopay.wallet.model.service;
 
 import com.monopay.wallet.validation.BalanceMustEnough;
 import com.monopay.wallet.validation.MemberMustExists;
-import com.monopay.wallet.validation.MerchantMustExists;
 import com.monopay.wallet.validation.data.BalanceData;
 import com.monopay.wallet.validation.data.MemberData;
 import lombok.AllArgsConstructor;
@@ -26,7 +25,6 @@ public class PurchaseTransactionServiceRequest implements MemberData, BalanceDat
   private String memberId;
 
   @NotBlank(message = "NotBlank")
-  @MerchantMustExists(message = "MustExists")
   private String merchantId;
 
   @NotNull(message = "NotNull")

@@ -5,7 +5,6 @@ import com.monopay.wallet.model.service.*;
 import com.monopay.wallet.model.web.response.*;
 import com.monopay.wallet.repository.BalanceRepository;
 import com.monopay.wallet.repository.TransactionRepository;
-import com.monopay.wallet.repository.TransferRepository;
 import com.monopay.wallet.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,9 +21,6 @@ public class TransactionServiceImpl implements TransactionService {
 
   @Autowired
   private TransactionRepository transactionRepository;
-
-  @Autowired
-  private TransferRepository transferRepository;
 
   @Autowired
   private BalanceRepository balanceRepository;
@@ -133,17 +129,6 @@ public class TransactionServiceImpl implements TransactionService {
     Balance balance = balanceRepository.findById(request.getMemberId()).get();
     balance.setBalance(balance.getBalance() - request.getTotal());
     balance = balanceRepository.save(balance);
-
-    Transfer transfer = Transfer.builder()
-      .id(UUID.randomUUID().toString())
-      .memberId(request.getMemberId())
-      .merchantId(request.getMerchantId())
-      .bank(request.getBank())
-      .bankAccountName(request.getBankAccountNumber())
-      .total(request.getTotal())
-      .status(TransferStatus.PENDING)
-      .build();
-    transfer = transferRepository.save(transfer);
 
     Transaction transaction = Transaction.builder()
       .id(UUID.randomUUID().toString())
