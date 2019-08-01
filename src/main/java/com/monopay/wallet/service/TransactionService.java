@@ -1,5 +1,7 @@
 package com.monopay.wallet.service;
 
+import com.monopay.wallet.entity.Balance;
+import com.monopay.wallet.event.SaveTransactionEvent;
 import com.monopay.wallet.model.service.*;
 import com.monopay.wallet.model.web.response.*;
 
@@ -17,4 +19,8 @@ public interface TransactionService {
   TransferTransactionWebResponse transfer(@Valid TransferTransactionServiceRequest request);
 
   List<TransactionWebResponse> list(@Valid ListTransactionServiceRequest request);
+
+  void publishBalance(Balance balance);
+
+  void publishTransaction(SaveTransactionEvent transaction);
 }

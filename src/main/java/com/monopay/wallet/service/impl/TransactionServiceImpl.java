@@ -1,12 +1,18 @@
 package com.monopay.wallet.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.monopay.wallet.entity.*;
+import com.monopay.wallet.event.SaveTransactionEvent;
 import com.monopay.wallet.model.service.*;
 import com.monopay.wallet.model.web.response.*;
 import com.monopay.wallet.repository.BalanceRepository;
 import com.monopay.wallet.repository.TransactionRepository;
 import com.monopay.wallet.service.TransactionService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -15,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Validated
 public class TransactionServiceImpl implements TransactionService {
@@ -25,11 +32,18 @@ public class TransactionServiceImpl implements TransactionService {
   @Autowired
   private BalanceRepository balanceRepository;
 
+  @Autowired
+  private KafkaTemplate<String, String> kafkaTemplate;
+
+  @Autowired
+  private ObjectMapper objectMapper;
+
   @Override
   public TopUpTransactionWebResponse topUp(@Valid TopUpTransactionServiceRequest request) {
     Balance balance = balanceRepository.findById(request.getMemberId()).get();
     balance.setBalance(balance.getBalance() + request.getTotal());
     balance = balanceRepository.save(balance);
+    publishBalance(balance);
 
     Transaction transaction = Transaction.builder()
       .id(UUID.randomUUID().toString())
@@ -42,6 +56,7 @@ public class TransactionServiceImpl implements TransactionService {
       .merchantId(request.getMerchantId())
       .build();
     transaction = transactionRepository.save(transaction);
+    publishTransaction(toSaveTransactionEvent(transaction));
 
     return TopUpTransactionWebResponse.builder()
       .memberId(request.getMemberId())
@@ -84,7 +99,10 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     balance = balanceRepository.save(balance);
+    publishBalance(balance);
+
     transaction = transactionRepository.save(transaction);
+    publishTransaction(toSaveTransactionEvent(transaction));
 
     return PurchaseTransactionWebResponse.builder()
       .memberId(request.getMemberId())
@@ -101,6 +119,7 @@ public class TransactionServiceImpl implements TransactionService {
     Balance balance = balanceRepository.findById(request.getMemberId()).get();
     balance.setPoint(balance.getPoint() + request.getTotal());
     balance = balanceRepository.save(balance);
+    publishBalance(balance);
 
     Transaction transaction = Transaction.builder()
       .id(UUID.randomUUID().toString())
@@ -113,6 +132,7 @@ public class TransactionServiceImpl implements TransactionService {
       .merchantId(request.getMerchantId())
       .build();
     transaction = transactionRepository.save(transaction);
+    publishTransaction(toSaveTransactionEvent(transaction));
 
     return PointTransactionWebResponse.builder()
       .memberId(request.getMemberId())
@@ -129,6 +149,7 @@ public class TransactionServiceImpl implements TransactionService {
     Balance balance = balanceRepository.findById(request.getMemberId()).get();
     balance.setBalance(balance.getBalance() - request.getTotal());
     balance = balanceRepository.save(balance);
+    publishBalance(balance);
 
     Transaction transaction = Transaction.builder()
       .id(UUID.randomUUID().toString())
@@ -141,6 +162,11 @@ public class TransactionServiceImpl implements TransactionService {
       .merchantId(request.getMerchantId())
       .build();
     transaction = transactionRepository.save(transaction);
+
+    SaveTransactionEvent event = toSaveTransactionEvent(transaction);
+    event.setBank(request.getBank());
+    event.setBankAccountNumber(request.getBankAccountNumber());
+    publishTransaction(event);
 
     return TransferTransactionWebResponse.builder()
       .memberId(request.getMemberId())
@@ -166,5 +192,32 @@ public class TransactionServiceImpl implements TransactionService {
         .createdAt(transaction.getCreatedAt())
         .build())
       .collect(Collectors.toList());
+  }
+
+  @Override
+  public void publishBalance(Balance balance) {
+    try {
+      String payload = objectMapper.writeValueAsString(balance);
+      kafkaTemplate.send("monopay-save-balance-event", payload);
+    } catch (JsonProcessingException e) {
+      log.error(e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public void publishTransaction(SaveTransactionEvent transaction) {
+    try {
+      String payload = objectMapper.writeValueAsString(transaction);
+      kafkaTemplate.send("monopay-save-transaction-event", payload);
+    } catch (JsonProcessingException e) {
+      log.error(e.getMessage(), e);
+    }
+  }
+
+  private SaveTransactionEvent toSaveTransactionEvent(Transaction transaction) {
+    SaveTransactionEvent event = new SaveTransactionEvent();
+    BeanUtils.copyProperties(transaction, event);
+    event.setType(transaction.getType().toString());
+    return event;
   }
 }

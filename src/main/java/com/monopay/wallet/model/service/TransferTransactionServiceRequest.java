@@ -18,7 +18,7 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 @NoArgsConstructor
 @MemberMustExists(message = "MustExists")
-@BalanceMustEnough(message = "MustEnough", withPoint = true)
+@BalanceMustEnough(message = "MustEnough", withPoint = false)
 public class TransferTransactionServiceRequest implements MemberData, BalanceData {
 
   @NotBlank(message = "NotBlank")
