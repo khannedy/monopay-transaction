@@ -31,4 +31,8 @@ public class SaveTransactionEvent {
 
   private String bankAccountNumber;
 
+  private Long createdAt;
+
+  private Long lastModifiedAt;
+
 }
